@@ -1,0 +1,52 @@
+﻿{% extends 'layout.html' %}
+
+{% block body %}
+<!-- Add icon library -->
+
+<form action="{% url 'addTranslator' %}" method="POST">
+    {% csrf_token %}
+    {{translatorForm}}
+    <button type="submit">Додати перекладача</button>
+</form>
+
+
+{% if translator_list %}
+{% for a in translator_list %}
+<div class="container container-fluid translators">
+    <span style="font-size: 24px">{{a.translator_name}}</span>&nbsp
+    <button style="float: right; margin: 3px;" class="btn btn-primary file-upload" onclick="addfiles({{a.id}})"><span class="glyphicon glyphicon-cloud-upload"></span>Завантажити файли</button>
+    <button style="float: right; margin: 3px;" type="button" onclick="window.location.href = '{% url 'deleteTranslator' tr_id=a.id %}';" class="btn btn-danger">Видалити перекладача</button>
+    <form method="POST" enctype="multipart/form-data" action="{% url 'upload_translator_files' tr_id=a.id %}">
+    {% csrf_token %}
+        <input onchange="this.form.submit()" style="display: none" id="file-input-{{a.id}}" type="file" accept=".txt" name="document" multiple>
+</form>
+    {% for text in train_texts %}
+    {% if text.translator == a %}
+    <div class="translator-texts">
+        {{text}}
+        <button onclick="window.location.href = '{% url 'deleteTranslatorFile' file_id=text.id %}';" type="button" class="close" aria-label="Close" style="float: none; position: relative; top: 2px;"><span aria-hidden="true">&times;</span></button>
+    </div>
+
+    {% endif %}
+    {% endfor %}
+
+</div>
+
+{% endfor %}
+<form action="{% url 'train' %}" method = "POST">{% csrf_token %}<button type="submit" class="btn btn-success">Тренувати все</button></form>
+{% else %}
+На даний момент в базі перекладачів немає. Додайте перекладача.
+{% endif %}
+
+
+
+
+{% endblock %}
+
+{% block script %}
+function addfiles(tr_id){
+$('#file-input-'+tr_id).trigger('click');
+}
+
+
+{% endblock %}

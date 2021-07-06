@@ -1,0 +1,97 @@
+﻿{% extends 'layout.html' %}
+
+{% block body %}
+<!-- Add icon library -->
+<form method="POST" enctype="multipart/form-data" action="{% url 'upload' %}">
+    {% csrf_token %}
+    <input onchange="this.form.submit()" style="display: none" id="file-input" type="file" accept=".txt" name="document" multiple>
+</form>
+<h1>Аналіз</h1>
+<h4>Завантажте файли та натисніть кнопку "Провести аналіз" для проведення аналізу.</h4>
+<form action="{% url 'makeAnalysis' %}" method="POST">
+    {% csrf_token %}
+
+            <button id="delete-chosen-texts" type="button" class="btn btn-danger">Видалити обрані</button>
+            <button class="btn btn-primary file-upload"><span class="glyphicon glyphicon-cloud-upload"></span> Завантажити файли</button>
+            <br><br>
+{% if test_texts %}
+<table class="table" style="width: 50%">
+    <tr><td><input type="checkbox" id="select-all-texts"><span class="input-list">Вибрати все</span></td><td></td></tr>
+    {% for text in test_texts %}
+    <tr>
+        <td>
+            <input type="checkbox" id = "{{text.id}}" name="test-texts" value="{{text}}"><span class="input-list">{{text}}</span>
+        </td>
+        <td>
+            <a href="{% url 'deleteTestFile' file_id=text.id %}">Видалити</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+Текстів не знайдено
+{% endif %}
+
+
+<button id="make-analysis" type="submit" value="Submit" class="btn btn-success">Провести аназіз</button>
+
+    </form>
+
+{% endblock %}
+
+{% block script %}
+$('.file-upload').on('click', function(e) {
+  e.preventDefault();
+  $('#file-input').trigger('click');
+});
+
+{% if test_texts %}
+document.getElementById('select-all-texts').onclick = function() {
+      var checkboxes = document.getElementsByName('test-texts');
+      for (var checkbox of checkboxes) {
+      checkbox.checked = this.checked;
+      }}
+{% else %}
+button = document.getElementById('make-analysis')
+button.disabled = true
+{% endif %}
+{% if not trainDictionary %}
+
+button = document.getElementById('make-analysis')
+button.disabled = true
+{% endif %}
+function selectChosenTestTexts() {
+var checked = [];
+var checkboxes = document.getElementsByName('test-texts');
+for (var checkbox of checkboxes) {
+if (checkbox.checked == true)
+checked.push(checkbox.id);
+}
+return checked;}
+
+$(document).ready(function () {
+        $("#ajax-text-me").click(function() {
+            $.ajax({
+                url:'/deleteCheckedTestFiles/',
+                type: "POST",
+                data: {csrfmiddlewaretoken : jQuery("[name=csrfmiddlewaretoken]").val(), selected: selectChosenTestTexts()},
+                success:function(response){},
+                complete:function(){},
+                error:function (xhr, textStatus, thrownError){}
+            });
+        });
+    });
+$(document).ready(function () {
+        $("#delete-chosen-texts").click(function() {
+            $.ajax({
+                url:'/deleteCheckedTestFiles/',
+                type: "POST",
+                data: {csrfmiddlewaretoken : jQuery("[name=csrfmiddlewaretoken]").val(), selected: selectChosenTestTexts()},
+                success:function() {location.reload();},
+                complete:function(){},
+                error:function (xhr, textStatus, thrownError){}
+            });
+        });
+    });
+
+{% endblock %}
